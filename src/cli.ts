@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
 import { Command } from "commander";
-import { openDatabase } from "./db.ts";
+import { openDatabase, type LicenseMatch } from "./db.ts";
 import { ingest } from "./ingest.ts";
+import { queryByComponent, queryByLicense } from "./query.ts";
 
 const program = new Command()
   .name("sbom-cli")
@@ -28,12 +29,32 @@ program
   .option("--version <version>", "only match this version of the component")
   .option("--license <id>", "license id")
   .option("--db <path>", "database file", "./sbom.db")
-  .action((opts: { component?: string; version?: string; license?: string }) => {
+  .action((opts: { component?: string; version?: string; license?: string; db: string }) => {
     if (!opts.component && !opts.license) {
       fail("Give --component <name> or --license <id>.");
     }
-    fail("Query is not implemented yet.");
+    if (opts.component && opts.license) {
+      fail("Give either --component or --license, not both.");
+    }
+    if (opts.version && !opts.component) {
+      fail("--version only works together with --component.");
+    }
+    const db = openDatabase(opts.db);
+    const lines = opts.component
+      ? queryByComponent(db, opts.component, opts.version).map((d) => `${d.name} ${d.version}`)
+      : queryByLicense(db, opts.license ?? "").map(formatLicenseMatch);
+    if (lines.length === 0) {
+      console.error("No matches");
+    } else {
+      console.log(lines.join("\n"));
+    }
   });
+
+// One tab-separated line: component name, version, document, and "suspect" when flagged.
+function formatLicenseMatch(match: LicenseMatch): string {
+  const line = `${match.componentName}\t${match.componentVersion}\t${match.documentName} ${match.documentVersion}`;
+  return match.suspect ? `${line}\tsuspect` : line;
+}
 
 function readFile(path: string): string {
   try {

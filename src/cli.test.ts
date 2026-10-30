@@ -51,3 +51,43 @@ test("query without a filter is refused", () => {
   assert.equal(status, 1);
   assert.match(stderr, /--component <name> or --license <id>/);
 });
+
+test("query with both filters is refused", () => {
+  const { status, stderr } = run("query", "--component", "ms", "--license", "MIT");
+  assert.equal(status, 1);
+  assert.match(stderr, /not both/);
+});
+
+test("query with --version but no --component is refused", () => {
+  const { status, stderr } = run("query", "--version", "1.0.0", "--license", "MIT");
+  assert.equal(status, 1);
+  assert.match(stderr, /--version only works/);
+});
+
+test("query answers from an ingested database", () => {
+  const db = tempPath("sbom.db");
+  assert.equal(run("ingest", fixture, "--db", db).status, 0);
+
+  const byComponent = run("query", "--component", "ms", "--db", db);
+  assert.equal(byComponent.status, 0);
+  assert.equal(byComponent.stdout, "juice-shop 14.1.1\n");
+
+  const byVersion = run("query", "--component", "ms", "--version", "2.1.3", "--db", db);
+  assert.equal(byVersion.stdout, "juice-shop 14.1.1\n");
+
+  const byLicense = run("query", "--license", "GPL-2.0", "--db", db);
+  assert.equal(byLicense.status, 0);
+  assert.equal(byLicense.stdout, "fuzzball\t1.4.0\tjuice-shop 14.1.1\tsuspect\n");
+
+  const common = run("query", "--license", "MIT", "--db", db);
+  assert.equal(common.stdout.trim().split("\n").length, 920);
+  assert.equal(common.stdout.includes("suspect"), false);
+});
+
+test("query with no matches says so on stderr and exits 0", () => {
+  const db = tempPath("sbom.db");
+  const { status, stdout, stderr } = run("query", "--component", "nope", "--db", db);
+  assert.equal(status, 0);
+  assert.equal(stdout, "");
+  assert.equal(stderr.trim(), "No matches");
+});
