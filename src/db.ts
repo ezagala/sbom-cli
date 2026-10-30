@@ -2,6 +2,9 @@
 import { DatabaseSync } from "node:sqlite";
 import type { Document } from "./model.ts";
 
+// The connection type the rest of the program passes around.
+export type Database = DatabaseSync;
+
 const schema = `
   create table if not exists documents (
     id integer primary key,
@@ -40,14 +43,14 @@ const schema = `
   create index if not exists component_licenses_license on component_licenses (license_id);
 `;
 
-export function openDatabase(path: string): DatabaseSync {
+export function openDatabase(path: string): Database {
   const db = new DatabaseSync(path);
   db.exec("pragma foreign_keys = on");
   db.exec(schema);
   return db;
 }
 
-export function upsertLicenses(db: DatabaseSync, licenses: { id: string; suspect: boolean }[]): void {
+export function upsertLicenses(db: Database, licenses: { id: string; suspect: boolean }[]): void {
   const upsert = db.prepare(
     "insert into licenses (id, suspect) values (?, ?) on conflict (id) do update set suspect = excluded.suspect",
   );
@@ -58,7 +61,7 @@ export function upsertLicenses(db: DatabaseSync, licenses: { id: string; suspect
 
 // Writes the document, its components, and their licenses in one transaction.
 // Returns the new document id.
-export function insertDocument(db: DatabaseSync, doc: Document): number {
+export function insertDocument(db: Database, doc: Document): number {
   const insertDoc = db.prepare(
     `insert into documents (format, spec_version, serial_number, name, version, ingested_at, raw)
      values (?, ?, ?, ?, ?, ?, ?)`,
@@ -105,7 +108,7 @@ export function insertDocument(db: DatabaseSync, doc: Document): number {
 
 export type DocumentMatch = { name: string; version: string };
 
-export function findDocumentsWithComponent(db: DatabaseSync, name: string, version?: string): DocumentMatch[] {
+export function findDocumentsWithComponent(db: Database, name: string, version?: string): DocumentMatch[] {
   // coalesce makes the version filter a no-op when no version is given.
   const rows = db
     .prepare(
@@ -127,7 +130,7 @@ export type LicenseMatch = {
   suspect: boolean;
 };
 
-export function findComponentsWithLicense(db: DatabaseSync, licenseId: string): LicenseMatch[] {
+export function findComponentsWithLicense(db: Database, licenseId: string): LicenseMatch[] {
   const rows = db
     .prepare(
       `select c.name as componentName, c.version as componentVersion,

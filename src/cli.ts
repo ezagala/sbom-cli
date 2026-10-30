@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// The command line shell. It reads arguments, calls one function, and prints the result.
 import { readFileSync } from "node:fs";
 import { Command } from "commander";
-import { parseCycloneDx } from "./sbom.ts";
+import { openDatabase } from "./db.ts";
+import { ingest } from "./ingest.ts";
 
 const program = new Command()
   .name("sbom-cli")
@@ -13,9 +13,12 @@ program
   .description("Parse a CycloneDX JSON file and store it.")
   .argument("<sbom-file>", "path to a CycloneDX 1.x JSON file")
   .option("--db <path>", "database file", "./sbom.db")
-  .action((file: string) => {
-    const doc = parseCycloneDx(readFile(file));
-    console.log(`Parsed ${doc.name} ${doc.version}: ${doc.components.length} components`);
+  .action((file: string, opts: { db: string }) => {
+    const text = readFile(file);
+    const summary = ingest(openDatabase(opts.db), text);
+    console.log(
+      `Ingested ${summary.name} ${summary.version}: ${summary.components} components, ${summary.suspect} with a suspect license`,
+    );
   });
 
 program
