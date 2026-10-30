@@ -4,7 +4,7 @@
 
 **Inputs.** The design docs above; `sbom-cli` at `origin/main` `902bfd3`, read on 2026-10-29 (it holds only docs, `CLAUDE.md`, and `.gitignore`, so every source file below is new); the standing rules in [CLAUDE.md](../CLAUDE.md); the fixture at `../cli/fixtures/juice-shop-14.1.1.cdx.json` and its README; the `node:sqlite` review from the forked session on 2026-10-29; the environment on this machine, checked on 2026-10-29.
 
-**How to read this document.** Section 1 says in plain language what gets built and where it stops. Section 2 is the commit map: five commits, each with what it changes, how it is proven, and the first moment it can be run for real. Section 3 is the verification matrix. Section 4 lists the decisions this plan makes that the design left open, with the alternative for each. Section 5 is the live gate, and section 6 the rules and the estimate.
+**How to read this document.** Section 1 says in plain language what gets built and where it stops. Section 2 is the commit map: five commits, each with what it changes, how it is proven, and the first moment it can be run for real. Section 3 is the verification matrix. Section 4 lists the decisions this plan makes that the design left open, with the alternative for each. Section 5 is the live gate, and section 6 the rules and the order.
 
 ## Contents
 
@@ -14,7 +14,7 @@
 4. **[Verification matrix](#4-verification-matrix)** — the checks that define done.
 5. **[Decisions made here](#5-decisions-made-here)** — gaps the design left, and the choice taken for each.
 6. **[Live gate](#6-live-gate)** — the end-to-end run from a fresh clone.
-7. **[Rules, order and estimate](#7-rules-order-and-estimate)**
+7. **[Rules and order](#7-rules-and-order)**
 
 ## 1. What this builds
 
@@ -249,12 +249,10 @@ Conventions used below. **Changes** names files against `origin/main` `902bfd3`;
 
 SPDX input, nested components, and the dependency graph are not in this gate; they are on the design doc's Out of scope list.
 
-## 7. Rules, order and estimate
+## 7. Rules and order
 
 - One commit at a time. After each commit lands, stop and wait for a go-ahead before starting the next, per `CLAUDE.md`.
 - A test beside every source file, run with `node --test`. Type check before every commit. No build step.
 - Plain language in every user-facing string, comment, and commit message. Comments two lines at most.
 - Scope fences: only `src/db.ts` imports `node:sqlite` or contains SQL. `src/cli.ts` contains no business logic beyond flag validation and printing. Nothing on the Out of scope list is touched.
 - Order is fixed: 1 → 2 → 3 → 4 → 5. Commit 2 has no live moment of its own and is proven by its tests and by commit 3.
-
-**Estimate.** Commit 1: about 1.5 hours, most of it the parser tests and the fixture README. Commit 2: about 1 hour. Commit 3: about 1 hour. Commit 4: about 1 hour. Commit 5 and the gate: about half an hour. Around 5 hours of engineering, before the pauses for review between commits. There was no earlier figure to compare against.
