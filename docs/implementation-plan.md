@@ -1,6 +1,6 @@
 # SBOM CLI: implementation plan
 
-**Date:** 2026-10-29 · **Status:** Draft · **Ticket:** none; the work statement is [exercise_instructions.md](exercise_instructions.md) and the commit outline from the kickoff · **Branch:** `main` · **Design:** [design-guidelines.md](design-guidelines.md) all sections, [sql-vs-nosql.md](sql-vs-nosql.md) · **Charter:** [charter.md](charter.md)
+**Date:** 2026-10-29 · **Status:** Draft · **Ticket:** none; the work statement is the exercise brief and the commit outline from the kickoff · **Branch:** `main` · **Design:** [design-guidelines.md](design-guidelines.md) all sections, [sql-vs-nosql.md](sql-vs-nosql.md) · **Charter:** [charter.md](charter.md)
 
 **Inputs.** The design docs above; `sbom-cli` at `origin/main` `902bfd3`, read on 2026-10-29 (it holds only docs, `CLAUDE.md`, and `.gitignore`, so every source file below is new); the standing rules in [CLAUDE.md](../CLAUDE.md); the fixture at `../cli/fixtures/juice-shop-14.1.1.cdx.json` and its README; the `node:sqlite` review from the forked session on 2026-10-29; the environment on this machine, checked on 2026-10-29.
 
