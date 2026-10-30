@@ -38,7 +38,7 @@ node src/cli.ts query --license GPL-2.0
 
 When nothing matches, the command prints `No matches` to stderr and exits 0.
 
-Both commands accept `--db <path>` to use a different database file. Ingesting the same file twice stores it twice.
+Both commands accept `--db <path>` to use a different database file. A document is identified by its name and version; ingesting one that is already stored changes nothing and says so.
 
 ## Development
 

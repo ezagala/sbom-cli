@@ -16,9 +16,13 @@ program
   .option("--db <path>", "database file", "./sbom.db")
   .action((file: string, opts: { db: string }) => {
     const text = readFile(file);
-    const summary = ingest(openDatabase(opts.db), text);
+    const result = ingest(openDatabase(opts.db), text);
+    if (!result.stored) {
+      console.error(`Already ingested ${result.name} ${result.version}; nothing stored.`);
+      return;
+    }
     console.log(
-      `Ingested ${summary.name} ${summary.version}: ${summary.components} components, ${summary.suspect} with a suspect license`,
+      `Ingested ${result.name} ${result.version}: ${result.components} components, ${result.suspect} with a suspect license`,
     );
   });
 

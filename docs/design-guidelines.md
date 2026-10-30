@@ -44,7 +44,6 @@ Thousands of SBOMs with a thousand components each is single-digit millions of c
 - Nested components. The fixture has none.
 - The full SPDX license list. `licenses` is seeded from a static lookup of a handful of licenses that are not open source or look suspect.
 - Real expression parsing. Expressions are split on `OR`, `AND`, and parentheses.
-- Idempotency. Re-ingesting the same file creates a new document row.
 - Partitioning, batching, and covering indexes.
 - Migrations. The schema is created on startup if it does not exist.
 - Vulnerability data, pagination, and output formats beyond plain text.
@@ -63,3 +62,4 @@ Settled during the design session so the implementation plan does not have to ch
 | Database file | `./sbom.db` by default, overridable with `--db` on both commands. Tests pass `:memory:` through the same path. |
 | Tests | Beside the source as `name.test.ts`. |
 | Cadence | One commit at a time, pausing for a go-ahead after each. |
+| Re-ingest | A document is identified by its name and version. Ingesting one that is already stored changes nothing and says so. Settled after the live gate showed the two queries disagreeing about how many documents exist. |

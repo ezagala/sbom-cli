@@ -13,7 +13,7 @@ function count(db: ReturnType<typeof openDatabase>, sql: string): number {
 test("ingesting the fixture stores every component and reports the summary", () => {
   const db = openDatabase(":memory:");
   const summary = ingest(db, fixture);
-  assert.deepEqual(summary, { name: "juice-shop", version: "14.1.1", components: 1101, suspect: 6 });
+  assert.deepEqual(summary, { stored: true, name: "juice-shop", version: "14.1.1", components: 1101, suspect: 6 });
   assert.equal(count(db, "select count(*) as n from documents"), 1);
   assert.equal(count(db, "select count(*) as n from components"), 1101);
 });
@@ -35,11 +35,12 @@ test("a component with an expression gets one license row per member", () => {
   assert.equal(count(db, "select count(*) as n from component_licenses where raw_text = '(MIT OR Apache-2.0)'"), 4);
 });
 
-test("ingesting the same file twice stores two documents", () => {
+test("ingesting the same document twice stores it once and says so", () => {
   const db = openDatabase(":memory:");
   ingest(db, fixture);
-  ingest(db, fixture);
-  assert.equal(count(db, "select count(*) as n from documents"), 2);
+  assert.deepEqual(ingest(db, fixture), { stored: false, name: "juice-shop", version: "14.1.1" });
+  assert.equal(count(db, "select count(*) as n from documents"), 1);
+  assert.equal(count(db, "select count(*) as n from components"), 1101);
 });
 
 test("a file that is not CycloneDX is refused and nothing is stored", () => {

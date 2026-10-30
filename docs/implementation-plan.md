@@ -24,7 +24,7 @@ Today the repo holds a design and nothing else. What lands is a TypeScript progr
 
 The parts land in the order the architecture diagram stacks them, bottom up after the entry point: the CLI shell and the parser first, then the database client, then ingest with enrichment, then query, then the README.
 
-It deliberately does not parse SPDX, store the dependency graph, flatten nested components, carry the full SPDX license list, parse license expressions properly, or dedupe re-ingested files. The design doc's Out of scope list is binding and each item above is on it.
+It deliberately does not parse SPDX, store the dependency graph, flatten nested components, carry the full SPDX license list, or parse license expressions properly. The design doc's Out of scope list is binding and each item above is on it.
 
 ## 2. Grounding
 
@@ -107,7 +107,7 @@ Conventions used below. **Changes** names files against `origin/main` `902bfd3`;
 
 **Proof**
 
-- Unit: ingesting the fixture into `:memory:` stores 1,101 components and the document row; `GPL-2.0`, `CC-BY-3.0`, and `WTFPL` are marked suspect and `MIT` is not; a component with an expression gets one `component_licenses` row per member; ingesting the same text twice yields two document rows (decision 9, no dedupe). `isSuspect` is true for every id on the list and false for `MIT`.
+- Unit: ingesting the fixture into `:memory:` stores 1,101 components and the document row; `GPL-2.0`, `CC-BY-3.0`, and `WTFPL` are marked suspect and `MIT` is not; a component with an expression gets one `component_licenses` row per member; ingesting the same text twice stores one document and reports it (decision 9). `isSuspect` is true for every id on the list and false for `MIT`.
 - **Live, first write:** `node src/cli.ts ingest fixtures/juice-shop-14.1.1.cdx.json` prints the summary and creates `./sbom.db`. `node -e` against the file shows 1 document, 1,101 components, 3 license rows marked suspect, and 6 components that carry one. `--db /tmp/other.db` writes there instead.
 
 ### Commit 4 — Query
@@ -188,7 +188,7 @@ Conventions used below. **Changes** names files against `origin/main` `902bfd3`;
 | I1 | Ingest the fixture | summary line, 1,101 components, 6 with a suspect license | B | 3 |
 | I2 | `GPL-2.0`, `CC-BY-3.0`, `WTFPL` | `suspect = 1`; `MIT` is 0 | B | 3 |
 | I3 | Expression component | one `component_licenses` row per member | U | 3 |
-| I4 | Same file twice | two document rows (no dedupe) | B | 3 |
+| I4 | Same document twice | one document row; `Already ingested` on stderr, exit 0 | B | 3 |
 | I5 | `ingest` with an SPDX file | exit 1, message, no database write | B | 3 |
 | I6 | Every id on the suspect list | `isSuspect` true; `MIT` false | U | 3 |
 
@@ -228,7 +228,7 @@ Conventions used below. **Changes** names files against `origin/main` `902bfd3`;
 6. **Component names are stored as the SBOM gives them.** For scoped npm packages that is `colors`, not `@colors/colors`; the scope stays in `purl` (G11). *Alternative:* store `group/name` when a group is present, so queries match how npm users write the name.
 7. **The suspect list.** `GPL-2.0`, `GPL-3.0`, `LGPL-2.1`, `LGPL-3.0`, `AGPL-3.0` as copyleft; `CC-BY-3.0`, `CC-BY-4.0`, `CC-BY-SA-4.0` as content licenses, not software licenses; `WTFPL` as not OSI approved; `SSPL-1.0` and `BUSL-1.1` as source-available but not open source. Each entry carries its reason in the code. *Alternative:* a shorter list of only the three ids the fixture contains.
 8. **No matches is not an error.** Nothing on stdout, `No matches` on stderr, exit 0, so the command composes with pipes. *Alternative:* exit 1.
-9. **No dedupe on re-ingest.** Per Out of scope, the same file twice makes two document rows. *Alternative:* refuse when a document with the same name and version exists.
+9. **Re-ingest is a no-op.** A document is identified by its name and version; ingesting one that is already stored changes nothing and says so on stderr with exit 0. This was first planned as no dedupe, and changed after the live gate showed the component query and the license query disagreeing about how many documents exist. *Alternative:* replace the stored document, or exit 1.
 10. **The parser lands complete in commit 1.** The outline said "scaffold parse"; a complete parser costs the same and gives commit 1 a live moment. *Alternative:* a stub that returns a fixed document.
 11. **A fifth commit for the README.** The outline had four; the exercise requires a README, and the skill's rule is that docs come last with a fresh-clone proof. *Alternative:* fold the README into commit 4.
 12. **Commits land on `main` directly.** Solo take-home, no PR, each commit reviewed in the pause after it lands. *Alternative:* a feature branch with one PR at the end.

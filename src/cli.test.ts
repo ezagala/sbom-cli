@@ -26,6 +26,15 @@ test("ingest stores the fixture in the given database and prints a summary", () 
   assert.equal(existsSync(db), true);
 });
 
+test("ingest of an already stored document changes nothing and says so", () => {
+  const db = tempPath("sbom.db");
+  run("ingest", fixture, "--db", db);
+  const { status, stdout, stderr } = run("ingest", fixture, "--db", db);
+  assert.equal(status, 0);
+  assert.equal(stdout, "");
+  assert.equal(stderr.trim(), "Already ingested juice-shop 14.1.1; nothing stored.");
+});
+
 test("ingest refuses a file that is not CycloneDX", () => {
   const spdx = tempPath("spdx.json");
   writeFileSync(spdx, JSON.stringify({ spdxVersion: "SPDX-3.0" }));

@@ -59,6 +59,10 @@ export function upsertLicenses(db: Database, licenses: { id: string; suspect: bo
   }
 }
 
+export function hasDocument(db: Database, name: string, version: string): boolean {
+  return db.prepare("select 1 from documents where name = ? and version = ?").get(name, version) !== undefined;
+}
+
 // Writes the document, its components, and their licenses in one transaction.
 // Returns the new document id.
 export function insertDocument(db: Database, doc: Document): number {

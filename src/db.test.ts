@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { findComponentsWithLicense, findDocumentsWithComponent, insertDocument, openDatabase, upsertLicenses } from "./db.ts";
+import { findComponentsWithLicense, findDocumentsWithComponent, hasDocument, insertDocument, openDatabase, upsertLicenses } from "./db.ts";
 import type { Component, Document } from "./model.ts";
 
 function component(name: string, version: string, licenseIds: string[] = []): Component {
@@ -84,4 +84,12 @@ test("a component that lists the same license twice gets one row", () => {
   const db = openDatabase(":memory:");
   insertDocument(db, document("app", "1.0.0", [component("a", "1", ["MIT", "MIT"])]));
   assert.equal(db.prepare("select count(*) as n from component_licenses").get()!.n, 1);
+});
+
+test("a document is known by its name and version once inserted", () => {
+  const db = openDatabase(":memory:");
+  assert.equal(hasDocument(db, "app", "1.0.0"), false);
+  insertDocument(db, document("app", "1.0.0", []));
+  assert.equal(hasDocument(db, "app", "1.0.0"), true);
+  assert.equal(hasDocument(db, "app", "2.0.0"), false);
 });
