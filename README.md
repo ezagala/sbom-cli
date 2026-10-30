@@ -51,3 +51,7 @@ npm run typecheck
 ```
 
 Tests sit beside the files they test under `src/`.
+
+## Attribution
+
+Designed and built by Eric Zagala with Claude Code. The decisions are mine; the typing was mostly not.
