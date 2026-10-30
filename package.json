@@ -1,0 +1,25 @@
+{
+  "name": "sbom-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ingest SBOMs into SQLite and query them by component or license.",
+  "type": "module",
+  "bin": {
+    "sbom-cli": "./src/cli.ts"
+  },
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "start": "node src/cli.ts",
+    "test": "node --test",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "commander": "^15.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}
