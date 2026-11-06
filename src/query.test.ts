@@ -23,13 +23,23 @@ test("a version filter matches only that version", () => {
   assert.deepEqual(queryByComponent(db, "ms", "9.9.9"), []);
 });
 
+test("a scoped package is found by its full name, not by its bare name", () => {
+  const db = seeded();
+  const juiceShop = [{ name: "juice-shop", version: "14.1.1" }];
+  assert.deepEqual(queryByComponent(db, "@nlpjs/core"), juiceShop);
+  assert.deepEqual(queryByComponent(db, "@otplib/core", "12.0.1"), juiceShop);
+  // 12.0.1 is the @otplib version, so it must not match @nlpjs/core.
+  assert.deepEqual(queryByComponent(db, "@nlpjs/core", "12.0.1"), []);
+  assert.deepEqual(queryByComponent(db, "core"), []);
+});
+
 test("an unknown component finds nothing", () => {
   assert.deepEqual(queryByComponent(seeded(), "nope"), []);
 });
 
 test("a suspect license returns its component with the flag set", () => {
   assert.deepEqual(queryByLicense(seeded(), "GPL-2.0"), [
-    { componentName: "fuzzball", componentVersion: "1.4.0", documentName: "juice-shop", documentVersion: "14.1.1", suspect: true },
+    { componentGroup: null, componentName: "fuzzball", componentVersion: "1.4.0", documentName: "juice-shop", documentVersion: "14.1.1", suspect: true },
   ]);
 });
 

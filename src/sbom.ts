@@ -7,6 +7,7 @@ type RawLicense = {
 };
 
 type RawComponent = {
+  group?: string;
   name: string;
   version?: string;
   purl?: string;
@@ -46,6 +47,7 @@ export function parseCycloneDx(text: string): Document {
 
 function toComponent(raw: RawComponent): Component {
   return {
+    group: raw.group ?? null,
     name: raw.name,
     version: raw.version ?? "unknown",
     purl: raw.purl ?? null,

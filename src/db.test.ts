@@ -7,7 +7,7 @@ import { findComponentsWithLicense, findDocumentsWithComponent, hasDocument, ins
 import type { Component, Document } from "./model.ts";
 
 function component(name: string, version: string, licenseIds: string[] = []): Component {
-  return { name, version, purl: null, bomRef: null, licenses: licenseIds.map((id) => ({ id, rawText: null })) };
+  return { group: null, name, version, purl: null, bomRef: null, licenses: licenseIds.map((id) => ({ id, rawText: null })) };
 }
 
 function document(name: string, version: string, components: Component[]): Document {
@@ -18,32 +18,41 @@ test("opening the same database file twice keeps the schema and the data", () =>
   const path = join(mkdtempSync(join(tmpdir(), "sbom-")), "test.db");
   insertDocument(openDatabase(path), document("app", "1.0.0", [component("ms", "2.1.3")]));
   const reopened = openDatabase(path);
-  assert.deepEqual(findDocumentsWithComponent(reopened, "ms"), [{ name: "app", version: "1.0.0" }]);
+  assert.deepEqual(findDocumentsWithComponent(reopened, null, "ms"), [{ name: "app", version: "1.0.0" }]);
 });
 
 test("a document can be found by one of its components", () => {
   const db = openDatabase(":memory:");
   insertDocument(db, document("app", "1.0.0", [component("ms", "2.1.3"), component("debug", "4.3.4")]));
-  assert.deepEqual(findDocumentsWithComponent(db, "ms"), [{ name: "app", version: "1.0.0" }]);
-  assert.deepEqual(findDocumentsWithComponent(db, "nope"), []);
+  assert.deepEqual(findDocumentsWithComponent(db, null, "ms"), [{ name: "app", version: "1.0.0" }]);
+  assert.deepEqual(findDocumentsWithComponent(db, null, "nope"), []);
 });
 
 test("a version filter keeps only that version", () => {
   const db = openDatabase(":memory:");
   insertDocument(db, document("app", "1.0.0", [component("ms", "2.1.3"), component("ms", "2.0.0")]));
   insertDocument(db, document("other", "2.0.0", [component("ms", "2.0.0")]));
-  assert.deepEqual(findDocumentsWithComponent(db, "ms", "2.1.3"), [{ name: "app", version: "1.0.0" }]);
-  assert.deepEqual(findDocumentsWithComponent(db, "ms", "2.0.0"), [
+  assert.deepEqual(findDocumentsWithComponent(db, null, "ms", "2.1.3"), [{ name: "app", version: "1.0.0" }]);
+  assert.deepEqual(findDocumentsWithComponent(db, null, "ms", "2.0.0"), [
     { name: "app", version: "1.0.0" },
     { name: "other", version: "2.0.0" },
   ]);
-  assert.deepEqual(findDocumentsWithComponent(db, "ms", "9.9.9"), []);
+  assert.deepEqual(findDocumentsWithComponent(db, null, "ms", "9.9.9"), []);
+});
+
+test("a component is matched on its group as well as its name", () => {
+  const db = openDatabase(":memory:");
+  insertDocument(db, document("app", "1.0.0", [component("debug", "4.3.4")]));
+  insertDocument(db, document("typed", "1.0.0", [{ ...component("debug", "4.1.12"), group: "@types" }]));
+  assert.deepEqual(findDocumentsWithComponent(db, null, "debug"), [{ name: "app", version: "1.0.0" }]);
+  assert.deepEqual(findDocumentsWithComponent(db, "@types", "debug"), [{ name: "typed", version: "1.0.0" }]);
+  assert.deepEqual(findDocumentsWithComponent(db, "@other", "debug"), []);
 });
 
 test("a document appears once even when it holds several versions of a component", () => {
   const db = openDatabase(":memory:");
   insertDocument(db, document("app", "1.0.0", [component("ms", "2.1.3"), component("ms", "2.0.0")]));
-  assert.equal(findDocumentsWithComponent(db, "ms").length, 1);
+  assert.equal(findDocumentsWithComponent(db, null, "ms").length, 1);
 });
 
 test("a license shared by two components returns both with their document", () => {
@@ -51,10 +60,16 @@ test("a license shared by two components returns both with their document", () =
   upsertLicenses(db, [{ id: "GPL-2.0", suspect: true }]);
   insertDocument(db, document("app", "1.0.0", [component("a", "1", ["MIT", "GPL-2.0"]), component("b", "2", ["GPL-2.0"])]));
   assert.deepEqual(findComponentsWithLicense(db, "GPL-2.0"), [
-    { componentName: "a", componentVersion: "1", documentName: "app", documentVersion: "1.0.0", suspect: true },
-    { componentName: "b", componentVersion: "2", documentName: "app", documentVersion: "1.0.0", suspect: true },
+    { componentGroup: null, componentName: "a", componentVersion: "1", documentName: "app", documentVersion: "1.0.0", suspect: true },
+    { componentGroup: null, componentName: "b", componentVersion: "2", documentName: "app", documentVersion: "1.0.0", suspect: true },
   ]);
   assert.equal(findComponentsWithLicense(db, "MIT")[0].suspect, false);
+});
+
+test("a license match carries the component's group", () => {
+  const db = openDatabase(":memory:");
+  insertDocument(db, document("app", "1.0.0", [{ ...component("debug", "4.1.12", ["MIT"]), group: "@types" }]));
+  assert.equal(findComponentsWithLicense(db, "MIT")[0].componentGroup, "@types");
 });
 
 test("upserting a license twice leaves one row with the latest flag", () => {

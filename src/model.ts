@@ -8,6 +8,8 @@ export type License = {
 };
 
 export type Component = {
+  // The npm scope or other namespace, such as "@types" in "@types/debug". Null when there is none.
+  group: string | null;
   name: string;
   version: string;
   purl: string | null;

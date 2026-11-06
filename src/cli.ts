@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { Command } from "commander";
 import { openDatabase, type LicenseMatch } from "./db.ts";
 import { ingest } from "./ingest.ts";
-import { queryByComponent, queryByLicense } from "./query.ts";
+import { joinPackageName, queryByComponent, queryByLicense } from "./query.ts";
 
 const program = new Command()
   .name("sbom-cli")
@@ -29,7 +29,7 @@ program
 program
   .command("query")
   .description("Find documents by component, or components by license.")
-  .option("--component <name>", "component name")
+  .option("--component <name>", "package name, such as ms or @types/debug")
   .option("--version <version>", "only match this version of the component")
   .option("--license <id>", "license id")
   .option("--db <path>", "database file", "./sbom.db")
@@ -54,9 +54,10 @@ program
     }
   });
 
-// One tab-separated line: component name, version, document, and "suspect" when flagged.
+// One tab-separated line: package name, version, document, and "suspect" when flagged.
 function formatLicenseMatch(match: LicenseMatch): string {
-  const line = `${match.componentName}\t${match.componentVersion}\t${match.documentName} ${match.documentVersion}`;
+  const name = joinPackageName(match.componentGroup, match.componentName);
+  const line = `${name}\t${match.componentVersion}\t${match.documentName} ${match.documentVersion}`;
   return match.suspect ? `${line}\tsuspect` : line;
 }
 

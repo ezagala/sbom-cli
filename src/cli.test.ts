@@ -84,6 +84,9 @@ test("query answers from an ingested database", () => {
   const byVersion = run("query", "--component", "ms", "--version", "2.1.3", "--db", db);
   assert.equal(byVersion.stdout, "juice-shop 14.1.1\n");
 
+  const scoped = run("query", "--component", "@nlpjs/core", "--db", db);
+  assert.equal(scoped.stdout, "juice-shop 14.1.1\n");
+
   const byLicense = run("query", "--license", "GPL-2.0", "--db", db);
   assert.equal(byLicense.status, 0);
   assert.equal(byLicense.stdout, "fuzzball\t1.4.0\tjuice-shop 14.1.1\tsuspect\n");
@@ -91,6 +94,7 @@ test("query answers from an ingested database", () => {
   const common = run("query", "--license", "MIT", "--db", db);
   assert.equal(common.stdout.trim().split("\n").length, 920);
   assert.equal(common.stdout.includes("suspect"), false);
+  assert.equal(common.stdout.includes("@types/debug\t4.1.12\tjuice-shop 14.1.1\n"), true);
 });
 
 test("query with no matches says so on stderr and exits 0", () => {

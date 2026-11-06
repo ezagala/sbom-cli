@@ -21,7 +21,7 @@ Relational. Both queries cut across documents, so components and licenses become
 ![Data model: five tables with arrows from the one side to the many side](assets/data-model.svg)
 
 - **documents** is one row per ingested SBOM, with the raw JSON kept so enrichment can be re-run.
-- **components** is one row per component per document. Name, version, and purl are copied out for the queries to filter on.
+- **components** is one row per component per document. Group, name, version, and purl are copied out for the queries to filter on. The group keeps scoped packages apart: `@types/debug` is group `@types` and name `debug`, a different package from `debug`.
 - **licenses** is a small reference table keyed by SPDX id. The suspect flag is where enrichment lands.
 - **component_licenses** joins the two, since a component may declare several licenses and an expression splits into several ids.
 - **dependencies** holds the graph as edges. Neither query reads it.
@@ -58,7 +58,8 @@ Settled during the design session so the implementation plan does not have to ch
 | TypeScript | Run `.ts` directly under Node 26. `tsc` is a type check only. |
 | Fixture | The Juice Shop CycloneDX 1.6 file, 1,101 components, borrowed as is with its provenance note. |
 | Enrichment | A static list of SPDX ids with a reason for each. Anything not on the list is not flagged. |
-| Query output | One plain line per match. Component query prints document name and version. License query prints component name, version, and its document. |
+| Query output | One plain line per match. Component query prints document name and version. License query prints the full package name, version, and its document. |
+| Component names | A component is named by group and name together, as in `@types/debug`. A query for `debug` does not match `@types/debug`. The input is split at the last slash, the same way a purl separates namespace from name. Settled after finding 14 names in the fixture that each belong to more than one package. |
 | Database file | `./sbom.db` by default, overridable with `--db` on both commands. Tests pass `:memory:` through the same path. |
 | Tests | Beside the source as `name.test.ts`. |
 | Cadence | One commit at a time, pausing for a go-ahead after each. |

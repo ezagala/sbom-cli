@@ -20,6 +20,7 @@ const schema = `
   create table if not exists components (
     id integer primary key,
     document_id integer not null references documents (id),
+    group_name text,
     name text not null,
     version text not null,
     purl text,
@@ -71,7 +72,7 @@ export function insertDocument(db: Database, doc: Document): number {
      values (?, ?, ?, ?, ?, ?, ?)`,
   );
   const insertComponent = db.prepare(
-    "insert into components (document_id, name, version, purl, bom_ref) values (?, ?, ?, ?, ?)",
+    "insert into components (document_id, group_name, name, version, purl, bom_ref) values (?, ?, ?, ?, ?, ?)",
   );
   const ensureLicense = db.prepare("insert or ignore into licenses (id) values (?)");
   // "or ignore" because a component may list the same license twice.
@@ -94,8 +95,14 @@ export function insertDocument(db: Database, doc: Document): number {
     );
     for (const component of doc.components) {
       const componentId = Number(
-        insertComponent.run(documentId, component.name, component.version, component.purl, component.bomRef)
-          .lastInsertRowid,
+        insertComponent.run(
+          documentId,
+          component.group,
+          component.name,
+          component.version,
+          component.purl,
+          component.bomRef,
+        ).lastInsertRowid,
       );
       for (const license of component.licenses) {
         ensureLicense.run(license.id);
@@ -112,21 +119,28 @@ export function insertDocument(db: Database, doc: Document): number {
 
 export type DocumentMatch = { name: string; version: string };
 
-export function findDocumentsWithComponent(db: Database, name: string, version?: string): DocumentMatch[] {
+export function findDocumentsWithComponent(
+  db: Database,
+  group: string | null,
+  name: string,
+  version?: string,
+): DocumentMatch[] {
+  // "is" treats two nulls as equal, so a null group matches only components with no group.
   // coalesce makes the version filter a no-op when no version is given.
   const rows = db
     .prepare(
       `select distinct d.name, d.version
        from components c
        join documents d on d.id = c.document_id
-       where c.name = ? and c.version = coalesce(?, c.version)
+       where c.name = ? and c.group_name is ? and c.version = coalesce(?, c.version)
        order by d.name, d.version`,
     )
-    .all(name, version ?? null) as { name: string; version: string }[];
+    .all(name, group, version ?? null) as { name: string; version: string }[];
   return rows.map((row) => ({ name: row.name, version: row.version }));
 }
 
 export type LicenseMatch = {
+  componentGroup: string | null;
   componentName: string;
   componentVersion: string;
   documentName: string;
@@ -137,16 +151,17 @@ export type LicenseMatch = {
 export function findComponentsWithLicense(db: Database, licenseId: string): LicenseMatch[] {
   const rows = db
     .prepare(
-      `select c.name as componentName, c.version as componentVersion,
+      `select c.group_name as componentGroup, c.name as componentName, c.version as componentVersion,
               d.name as documentName, d.version as documentVersion, l.suspect
        from component_licenses cl
        join components c on c.id = cl.component_id
        join documents d on d.id = c.document_id
        join licenses l on l.id = cl.license_id
        where cl.license_id = ?
-       order by c.name, c.version`,
+       order by c.name, c.group_name, c.version`,
     )
     .all(licenseId) as {
+    componentGroup: string | null;
     componentName: string;
     componentVersion: string;
     documentName: string;
@@ -154,6 +169,7 @@ export function findComponentsWithLicense(db: Database, licenseId: string): Lice
     suspect: number;
   }[];
   return rows.map((row) => ({
+    componentGroup: row.componentGroup,
     componentName: row.componentName,
     componentVersion: row.componentVersion,
     documentName: row.documentName,

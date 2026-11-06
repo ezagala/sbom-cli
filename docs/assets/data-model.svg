@@ -40,21 +40,23 @@
     <text class="type" x="220" y="203" text-anchor="end">json</text>
   </g>
   <g class="table">
-    <rect class="body" x="270" y="40" width="190" height="136" rx="8"/>
+    <rect class="body" x="270" y="40" width="190" height="154" rx="8"/>
     <path class="head" d="M270 48 a8 8 0 0 1 8 -8 h174 a8 8 0 0 1 8 8 v20 h-190 z"/>
     <text class="title" x="365" y="54" text-anchor="middle">components</text>
     <text class="field" x="280" y="77">id</text>
     <text class="type" x="450" y="77" text-anchor="end">bigint PK</text>
     <text class="field" x="280" y="95">document_id</text>
     <text class="type" x="450" y="95" text-anchor="end">bigint FK</text>
-    <text class="field" x="280" y="113">name</text>
+    <text class="field" x="280" y="113">group_name</text>
     <text class="type" x="450" y="113" text-anchor="end">text</text>
-    <text class="field" x="280" y="131">version</text>
+    <text class="field" x="280" y="131">name</text>
     <text class="type" x="450" y="131" text-anchor="end">text</text>
-    <text class="field" x="280" y="149">purl</text>
+    <text class="field" x="280" y="149">version</text>
     <text class="type" x="450" y="149" text-anchor="end">text</text>
-    <text class="field" x="280" y="167">bom_ref</text>
+    <text class="field" x="280" y="167">purl</text>
     <text class="type" x="450" y="167" text-anchor="end">text</text>
+    <text class="field" x="280" y="185">bom_ref</text>
+    <text class="type" x="450" y="185" text-anchor="end">text</text>
   </g>
   <g class="table">
     <rect class="body" x="500" y="40" width="140" height="82" rx="8"/>
@@ -90,7 +92,7 @@
     <text class="type" x="580" y="333" text-anchor="end">text</text>
   </g>
   <path class="edge" d="M230 70 H268" marker-end="url(#arrow)"/>
-  <path class="edge" d="M310 176 V218 H255 V258" marker-end="url(#arrow)"/>
-  <path class="edge" d="M420 176 V258" marker-end="url(#arrow)"/>
+  <path class="edge" d="M310 194 V218 H255 V258" marker-end="url(#arrow)"/>
+  <path class="edge" d="M420 194 V258" marker-end="url(#arrow)"/>
   <path class="edge" d="M570 122 V258" marker-end="url(#arrow)"/>
 </svg>

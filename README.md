@@ -20,17 +20,21 @@ Ingest an SBOM. This creates `./sbom.db` in the current folder if it does not ex
 node src/cli.ts ingest fixtures/juice-shop-14.1.1.cdx.json
 ```
 
-Find the documents that contain a component, optionally at one version. Each match is one line: document name and version.
+Find the documents that contain a component, optionally at one version. Each match is one line: document name and version. Give a scoped package by its full name; `debug` and `@types/debug` are different packages.
 
 ```bash
 node src/cli.ts query --component ms
 ```
 
 ```bash
+node src/cli.ts query --component @types/debug
+```
+
+```bash
 node src/cli.ts query --component ms --version 2.1.3
 ```
 
-Find the components that carry a license. Each match is one tab-separated line: component name, component version, the document it belongs to, and the word `suspect` when the license is on the static list.
+Find the components that carry a license. Each match is one tab-separated line: full package name, component version, the document it belongs to, and the word `suspect` when the license is on the static list.
 
 ```bash
 node src/cli.ts query --license GPL-2.0

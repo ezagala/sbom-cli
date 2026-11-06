@@ -24,11 +24,17 @@ test("parses the fixture", () => {
   assert.equal(doc.raw, fixture);
 });
 
-test("keeps a scoped package's name as given and its scope in the purl", () => {
+test("keeps a scoped package's group apart from its name", () => {
   const doc = parseCycloneDx(fixture);
   const colors = doc.components.find((c) => c.purl === "pkg:npm/%40colors/colors@1.6.0");
+  assert.equal(colors?.group, "@colors");
   assert.equal(colors?.name, "colors");
   assert.equal(colors?.bomRef, "juice-shop@14.1.1|@colors/colors@1.6.0");
+});
+
+test("a component with no group gets a null group", () => {
+  const doc = parseCycloneDx(bomWith({}));
+  assert.equal(doc.components[0].group, null);
 });
 
 test("two license objects become two licenses", () => {
